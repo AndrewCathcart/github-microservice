@@ -1,8 +1,9 @@
 package githubprovider
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/andrewcathcart/github-microservice/src/api/clients/restclient"
@@ -31,12 +32,26 @@ func TestGetAuthHeader(t *testing.T) {
 	assert.EqualValues(t, "token 123xyz", header)
 }
 
-func TestCreateRepo(t *testing.T) {
+func TestCreateRepoRestclientError(t *testing.T) {
 	postMock = func(url string, body interface{}, headers http.Header) (*http.Response, error) {
-		return nil, fmt.Errorf("Auth missing")
+		return nil, errors.New("Auth missing")
 	}
 
 	response, err := CreateRepo("", &github.CreateRepoRequest{})
 	assert.Nil(t, response)
 	assert.NotNil(t, err)
+	assert.EqualValues(t, "Auth missing", err.Message)
+}
+
+func TestCreateRepoInvalidResponseBody(t *testing.T) {
+	invalidCloser, _ := os.Open("-sdfisq9w8")
+	postMock = func(url string, body interface{}, headers http.Header) (*http.Response, error) {
+		return &http.Response{StatusCode: http.StatusCreated, Body: invalidCloser}, nil
+	}
+
+	response, err := CreateRepo("", &github.CreateRepoRequest{})
+	assert.Nil(t, response)
+	assert.NotNil(t, err)
+	assert.EqualValues(t, http.StatusInternalServerError, err.StatusCode)
+	assert.EqualValues(t, "Invalid response body.", err.Message)
 }
