@@ -85,3 +85,19 @@ func TestCreateRepoUnauthorized(t *testing.T) {
 	assert.EqualValues(t, http.StatusUnauthorized, err.StatusCode)
 	assert.EqualValues(t, "Requires authentication", err.Message)
 }
+
+func TestCreateRepoInvalidSuccessResponse(t *testing.T) {
+	postMock = func(url string, body interface{}, headers http.Header) (*http.Response, error) {
+		return &http.Response{
+				StatusCode: http.StatusCreated,
+				Body:       ioutil.NopCloser(strings.NewReader(`{"id": "123"}`)),
+			},
+			nil
+	}
+
+	response, err := CreateRepo("", &github.CreateRepoRequest{})
+	assert.Nil(t, response)
+	assert.NotNil(t, err)
+	assert.EqualValues(t, http.StatusInternalServerError, err.StatusCode)
+	assert.EqualValues(t, "An error occurred when trying to unmarshal github CreateRepo response.", err.Message)
+}
