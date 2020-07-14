@@ -101,3 +101,20 @@ func TestCreateRepoInvalidSuccessResponse(t *testing.T) {
 	assert.EqualValues(t, http.StatusInternalServerError, err.StatusCode)
 	assert.EqualValues(t, "An error occurred when trying to unmarshal github CreateRepo response.", err.Message)
 }
+
+func TestCreateRepoNoError(t *testing.T) {
+	postMock = func(url string, body interface{}, headers http.Header) (*http.Response, error) {
+		return &http.Response{
+				StatusCode: http.StatusCreated,
+				Body:       ioutil.NopCloser(strings.NewReader(`{"id": 123, "name":"golang-playground", "full_name": "andrewcathcart/golang-playground" }`)),
+			},
+			nil
+	}
+
+	response, err := CreateRepo("", &github.CreateRepoRequest{})
+	assert.Nil(t, err)
+	assert.NotNil(t, response)
+	assert.EqualValues(t, 123, response.ID)
+	assert.EqualValues(t, "golang-playground", response.Name)
+	assert.EqualValues(t, "andrewcathcart/golang-playground", response.FullName)
+}

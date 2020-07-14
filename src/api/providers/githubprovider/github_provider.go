@@ -54,5 +54,5 @@ func CreateRepo(accessToken string, req *github.CreateRepoRequest) (*github.Crea
 		return nil, &github.GithubErrorResponse{StatusCode: http.StatusInternalServerError, Message: "An error occurred when trying to unmarshal github CreateRepo response."}
 	}
 
-	return &github.CreateRepoResponse{}, nil
+	return &result, nil
 }
