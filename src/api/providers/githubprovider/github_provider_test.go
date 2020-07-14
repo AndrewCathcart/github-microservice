@@ -2,8 +2,10 @@ package githubprovider
 
 import (
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/andrewcathcart/github-microservice/src/api/clients/restclient"
@@ -54,4 +56,32 @@ func TestCreateRepoInvalidResponseBody(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.EqualValues(t, http.StatusInternalServerError, err.StatusCode)
 	assert.EqualValues(t, "Invalid response body.", err.Message)
+}
+
+func TestCreateRepoInvalidInterfaceError(t *testing.T) {
+	postMock = func(url string, body interface{}, headers http.Header) (*http.Response, error) {
+		return &http.Response{StatusCode: http.StatusUnauthorized, Body: ioutil.NopCloser(strings.NewReader(`{"message": 1}`))}, nil
+	}
+
+	response, err := CreateRepo("", &github.CreateRepoRequest{})
+	assert.Nil(t, response)
+	assert.NotNil(t, err)
+	assert.EqualValues(t, http.StatusInternalServerError, err.StatusCode)
+	assert.EqualValues(t, "Invalid json response body.", err.Message)
+}
+
+func TestCreateRepoUnauthorized(t *testing.T) {
+	postMock = func(url string, body interface{}, headers http.Header) (*http.Response, error) {
+		return &http.Response{
+				StatusCode: http.StatusUnauthorized,
+				Body:       ioutil.NopCloser(strings.NewReader(`{"message": "Requires authentication", "documentation_url": "https://developer.github.com/v3/repos/#create"}`)),
+			},
+			nil
+	}
+
+	response, err := CreateRepo("", &github.CreateRepoRequest{})
+	assert.Nil(t, response)
+	assert.NotNil(t, err)
+	assert.EqualValues(t, http.StatusUnauthorized, err.StatusCode)
+	assert.EqualValues(t, "Requires authentication", err.Message)
 }
