@@ -28,6 +28,12 @@ func init() {
 	restclient.RestClient = &restClientMockStruct{}
 }
 
+func TestConstants(t *testing.T) {
+	assert.EqualValues(t, "Authorization", headerAuth)
+	assert.EqualValues(t, "token %s", headerAuthFormat)
+	assert.EqualValues(t, "https://api.github.com/user/repos", urlCreateRepo)
+}
+
 func TestGetAuthHeader(t *testing.T) {
 	header := getAuthHeader("123xyz")
 
